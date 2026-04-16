@@ -7,7 +7,6 @@ services:
   - type: web
     name: pine-web
     runtime: static
-    plan: free
     rootDir: pine-web
     buildCommand: npm install && npm run build
     staticPublishPath: dist
