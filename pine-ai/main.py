@@ -18,6 +18,7 @@ Global exception handler:
   - Returns { "status": "error", "message": "..." } for all unhandled exceptions
 """
 
+import os
 import uuid
 from contextlib import asynccontextmanager
 
@@ -42,6 +43,9 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("pine-ai starting up...")
+
+    # Ensure data directory exists (fresh filesystem on Render)
+    os.makedirs(os.path.dirname(settings.faiss_index_path) or "data", exist_ok=True)
 
     await init_db()
     logger.info("Database tables verified")
