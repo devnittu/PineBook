@@ -7,13 +7,12 @@ Full implementation in Phase 3.
 from __future__ import annotations
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 from app.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-_model: SentenceTransformer | None = None
+_model = None  # loaded lazily by load_model()
 
 
 class EmbeddingService:
@@ -22,6 +21,7 @@ class EmbeddingService:
     def load_model(cls, model_name: str) -> None:
         """Called once during lifespan startup."""
         global _model
+        from sentence_transformers import SentenceTransformer  # lazy — keep torch out of startup
         logger.info("Loading embedding model: %s", model_name)
         _model = SentenceTransformer(model_name)
         logger.info("Embedding model loaded successfully")
