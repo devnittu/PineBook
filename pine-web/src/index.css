@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-size: 15px;
+    line-height: 1.6;
+    overscroll-behavior: none;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-subtle; }
+
+  ::selection { background: #ffffff20; color: #fff; }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium
+           rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed
+           focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30;
+  }
+  .btn-primary {
+    @apply btn bg-foreground text-background hover:bg-foreground-2 active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply btn text-foreground-3 hover:text-foreground hover:bg-surface-2;
+  }
+  .btn-outline {
+    @apply btn border border-border text-foreground-2 hover:border-border-hover hover:text-foreground;
+  }
+
+  .card {
+    @apply bg-surface border border-border rounded-xl p-4 transition-all duration-150;
+  }
+  .card-hover {
+    @apply card hover:border-border-hover hover:bg-surface-2;
+  }
+
+  .input-field {
+    @apply w-full bg-surface-2 border border-border rounded-xl px-4 py-3 text-foreground
+           placeholder:text-muted outline-none transition-all duration-150
+           focus:border-subtle focus:bg-surface-3;
+  }
+
+  .skeleton {
+    @apply bg-surface-2 rounded-lg animate-pulse;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium font-mono
+           bg-surface-2 border border-border rounded-full text-foreground-3
+           hover:border-border-hover hover:text-foreground-2 transition-all duration-150 cursor-pointer;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2 text-sm text-foreground-3 rounded-lg
+           hover:text-foreground hover:bg-surface-2 transition-all duration-150 cursor-pointer;
+  }
+  .sidebar-link.active {
+    @apply text-foreground bg-surface-2 border-l-2 border-foreground;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+}
