@@ -35,7 +35,7 @@ build/
 # ── FAISS data ───────────────────────────
 data/
 *.index
-*.json
+pine-ai/data/*.json
 
 # ── IDE ──────────────────────────────────
 .idea/
