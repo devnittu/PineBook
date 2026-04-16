@@ -4,7 +4,27 @@
 
 services:
 
-  # ── Python FastAPI AI Service ──────────────────────────────────────────────
+  # ── React Frontend (Static Site) ──────────────────────────────────────────
+  - type: web
+    name: pine-web
+    runtime: static
+    region: oregon
+    plan: free
+    rootDir: pine-web
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html      # SPA fallback for react-router
+    envVars:
+      - key: VITE_USE_MOCK
+        value: "false"                # Use real backend in production
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: pine-api
+          property: host
   - type: web
     name: pine-ai
     runtime: python
