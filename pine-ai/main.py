@@ -40,23 +40,41 @@ logger = get_logger(__name__)
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
 
+import asyncio
+
+_ready = False  # becomes True once model + FAISS are loaded
+
+
+async def _background_startup():
+    global _ready
+    try:
+        await init_db()
+        logger.info("Database tables verified")
+
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None, lambda: EmbeddingService.load_model(settings.model_name)
+        )
+        logger.info("Embedding model loaded: %s", settings.model_name)
+
+        FaissService.load_or_create(settings.faiss_index_path)
+        logger.info("FAISS index ready — vectors=%d", FaissService.total_vectors())
+
+        _ready = True
+        logger.info("pine-ai fully ready")
+    except Exception as exc:
+        logger.error("Startup failed: %s", exc, exc_info=True)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("pine-ai starting up...")
-
-    # Ensure data directory exists (fresh filesystem on Render)
     os.makedirs(os.path.dirname(settings.faiss_index_path) or "data", exist_ok=True)
 
-    await init_db()
-    logger.info("Database tables verified")
+    # Yield immediately so Render detects the port — heavy work runs in background
+    asyncio.create_task(_background_startup())
 
-    EmbeddingService.load_model(settings.model_name)
-    logger.info("Embedding model loaded: %s", settings.model_name)
-
-    FaissService.load_or_create(settings.faiss_index_path)
-    logger.info("FAISS index ready — vectors=%d", FaissService.total_vectors())
-
-    yield  # ← app is running
+    yield  # ← server is live, requests can reach /health immediately
 
     FaissService.save(settings.faiss_index_path)
     logger.info("FAISS index saved — pine-ai shutting down cleanly")
@@ -141,9 +159,19 @@ async def health():
     return {
         "status":        "ok",
         "service":       "pine-ai",
-        "faiss_vectors": FaissService.total_vectors(),
+        "ready":         _ready,
+        "faiss_vectors": FaissService.total_vectors() if _ready else 0,
         "model":         settings.model_name,
     }
+
+
+@app.get("/ready", tags=["meta"])
+async def readiness():
+    """Render health check — returns 200 only when model is fully loaded."""
+    from fastapi.responses import JSONResponse
+    if _ready:
+        return {"status": "ready"}
+    return JSONResponse(status_code=503, content={"status": "loading"})
 
 
 # ── Entry ─────────────────────────────────────────────────────────────────────
