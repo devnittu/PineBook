@@ -27,6 +27,9 @@ engine = create_async_engine(
     pool_size=3,
     max_overflow=5,
     echo=False,
+    connect_args={
+        "statement_cache_size": 0,   # Required for PgBouncer transaction pooler
+    },
 )
 
 AsyncSessionLocal = async_sessionmaker(
