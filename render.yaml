@@ -1,5 +1,4 @@
 # Render deployment configuration for PineBook
-# Deploys both services on Render.com
 # Docs: https://render.com/docs/yaml-spec
 
 services:
@@ -8,7 +7,6 @@ services:
   - type: web
     name: pine-web
     runtime: static
-    region: oregon
     plan: free
     rootDir: pine-web
     buildCommand: npm install && npm run build
@@ -16,15 +14,12 @@ services:
     routes:
       - type: rewrite
         source: /*
-        destination: /index.html      # SPA fallback for react-router
+        destination: /index.html
     envVars:
       - key: VITE_USE_MOCK
-        value: "false"                # Use real backend in production
-      - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: pine-api
-          property: host
+        value: "false"
+
+  # ── Python FastAPI AI Service ──────────────────────────────────────────────
   - type: web
     name: pine-ai
     runtime: python
@@ -35,7 +30,7 @@ services:
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
-        sync: false          # Set manually in Render dashboard (use Supabase/Neon URL)
+        sync: false
       - key: FAISS_INDEX_PATH
         value: data/faiss.index
       - key: FAISS_META_PATH
@@ -48,18 +43,17 @@ services:
         value: INFO
     healthCheckPath: /health
 
-  # ── Spring Boot API Gateway ────────────────────────────────────────────────
+  # ── Spring Boot API Gateway (Docker) ──────────────────────────────────────
   - type: web
     name: pine-api
-    runtime: java
+    runtime: docker
     region: oregon
     plan: free
     rootDir: pine-api
-    buildCommand: mvn -B package -DskipTests
-    startCommand: java -jar target/pine-api-1.0.0-SNAPSHOT.jar
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: DB_URL
-        sync: false          # e.g. jdbc:postgresql://hostname:5432/pinebook
+        sync: false
       - key: DB_USERNAME
         sync: false
       - key: DB_PASSWORD
@@ -68,7 +62,7 @@ services:
         fromService:
           type: web
           name: pine-ai
-          property: host        # Render injects the internal URL automatically
+          property: host
       - key: AI_SERVICE_TIMEOUT_MS
         value: "10000"
       - key: SERVER_PORT
