@@ -10,10 +10,16 @@ from app.config import settings
 
 # Convert sync postgresql:// → async postgresql+asyncpg://
 def _async_url(url: str) -> str:
-    """Convert sync postgresql:// to async postgresql+asyncpg:// if needed."""
+    """Convert sync postgresql:// to async postgresql+asyncpg:// and add SSL."""
     if url.startswith("postgresql+asyncpg://"):
-        return url
-    return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        base = url
+    else:
+        base = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    # Append ssl=require for Supabase if not already present
+    if "ssl=" not in base:
+        sep = "&" if "?" in base else "?"
+        base = f"{base}{sep}ssl=require"
+    return base
 
 
 engine = create_async_engine(
@@ -21,7 +27,6 @@ engine = create_async_engine(
     pool_size=3,
     max_overflow=5,
     echo=False,
-    connect_args={"ssl": "require"},   # Required for Supabase
 )
 
 AsyncSessionLocal = async_sessionmaker(
