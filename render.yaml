@@ -1,0 +1,56 @@
+# Render deployment configuration for PineBook
+# Deploys both services on Render.com
+# Docs: https://render.com/docs/yaml-spec
+
+services:
+
+  # ── Python FastAPI AI Service ──────────────────────────────────────────────
+  - type: web
+    name: pine-ai
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: pine-ai
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # Set manually in Render dashboard (use Supabase/Neon URL)
+      - key: FAISS_INDEX_PATH
+        value: data/faiss.index
+      - key: FAISS_META_PATH
+        value: data/faiss_meta.json
+      - key: MODEL_NAME
+        value: all-MiniLM-L6-v2
+      - key: TOP_K
+        value: "5"
+      - key: LOG_LEVEL
+        value: INFO
+    healthCheckPath: /health
+
+  # ── Spring Boot API Gateway ────────────────────────────────────────────────
+  - type: web
+    name: pine-api
+    runtime: java
+    region: oregon
+    plan: free
+    rootDir: pine-api
+    buildCommand: mvn -B package -DskipTests
+    startCommand: java -jar target/pine-api-1.0.0-SNAPSHOT.jar
+    envVars:
+      - key: DB_URL
+        sync: false          # e.g. jdbc:postgresql://hostname:5432/pinebook
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: AI_SERVICE_BASE_URL
+        fromService:
+          type: web
+          name: pine-ai
+          property: host        # Render injects the internal URL automatically
+      - key: AI_SERVICE_TIMEOUT_MS
+        value: "10000"
+      - key: SERVER_PORT
+        value: "8080"
+    healthCheckPath: /actuator/health
