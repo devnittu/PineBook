@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
  * Responsible only for HTTP binding and status codes.
  */
 @RestController
+@RequestMapping("/api")
 public class VideoController {
 
     private static final Logger log = LoggerFactory.getLogger(VideoController.class);
