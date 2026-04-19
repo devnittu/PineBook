@@ -1,5 +1,15 @@
 # Render deployment configuration for PineBook
 # Docs: https://render.com/docs/yaml-spec
+# Deploy via: Render Dashboard → New → Blueprint → connect this repo
+
+databases:
+
+  # ── Managed PostgreSQL (free tier) ────────────────────────────────────────
+  - name: pinebook-db
+    region: oregon
+    plan: free
+    databaseName: pinebook
+    user: pinebook
 
 services:
 
@@ -7,6 +17,7 @@ services:
   - type: web
     name: pine-web
     runtime: static
+    region: oregon
     rootDir: pine-web
     buildCommand: npm install && npm run build
     staticPublishPath: dist
@@ -17,6 +28,11 @@ services:
     envVars:
       - key: VITE_USE_MOCK
         value: "false"
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: pine-api
+          property: hostWithScheme
 
   # ── Python FastAPI AI Service ──────────────────────────────────────────────
   - type: web
@@ -29,7 +45,9 @@ services:
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: pinebook-db
+          property: connectionString
       - key: FAISS_INDEX_PATH
         value: data/faiss.index
       - key: FAISS_META_PATH
@@ -40,7 +58,7 @@ services:
         value: "5"
       - key: LOG_LEVEL
         value: INFO
-    healthCheckPath: /health
+    healthCheckPath: /ready
 
   # ── Spring Boot API Gateway (Docker) ──────────────────────────────────────
   - type: web
@@ -52,16 +70,22 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DB_URL
-        sync: false
+        fromDatabase:
+          name: pinebook-db
+          property: jdbcConnectionString
       - key: DB_USERNAME
-        sync: false
+        fromDatabase:
+          name: pinebook-db
+          property: user
       - key: DB_PASSWORD
-        sync: false
+        fromDatabase:
+          name: pinebook-db
+          property: password
       - key: AI_SERVICE_BASE_URL
         fromService:
           type: web
           name: pine-ai
-          property: host
+          property: hostWithScheme
       - key: AI_SERVICE_TIMEOUT_MS
         value: "10000"
       - key: SERVER_PORT
