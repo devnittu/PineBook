@@ -17,7 +17,6 @@ services:
   - type: web
     name: pine-web
     runtime: static
-    region: oregon
     rootDir: pine-web
     buildCommand: npm install && npm run build
     staticPublishPath: dist
@@ -32,7 +31,7 @@ services:
         fromService:
           type: web
           name: pine-api
-          property: hostWithScheme
+          property: host
 
   # ── Python FastAPI AI Service ──────────────────────────────────────────────
   - type: web
@@ -72,7 +71,7 @@ services:
       - key: DB_URL
         fromDatabase:
           name: pinebook-db
-          property: jdbcConnectionString
+          property: connectionString
       - key: DB_USERNAME
         fromDatabase:
           name: pinebook-db
@@ -85,7 +84,7 @@ services:
         fromService:
           type: web
           name: pine-ai
-          property: hostWithScheme
+          property: host
       - key: AI_SERVICE_TIMEOUT_MS
         value: "10000"
       - key: SERVER_PORT
